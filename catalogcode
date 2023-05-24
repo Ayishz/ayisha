@@ -1,0 +1,101 @@
+catalog coding
+# Catalog with product details
+catalog = {
+    "Product A": 20,
+    "Product B": 40,
+    "Product C": 50
+}
+
+# Discount rules
+discount_rules = {
+    "flat_10_discount": {
+        "condition": lambda total, _: total > 200,
+        "discount": 10
+    },
+    "bulk_5_discount": {
+        "condition": lambda _, quantities: any(q > 10 for q in quantities),
+        "discount": 5
+    },
+    "bulk_10_discount": {
+        "condition": lambda _, quantities: sum(quantities) > 20,
+        "discount": 10
+    },
+    "tiered_50_discount": {
+        "condition": lambda _, quantities: sum(quantities) > 30 and any(q > 15 for q in quantities),
+        "discount": 50
+    }
+}
+
+# Fees
+gift_wrap_fee = 1
+shipping_fee_per_package = 5
+units_per_package = 10
+
+# Function to calculate the discount amount
+def calculate_discount(cart_total, quantities):
+    applicable_discounts = {}
+
+    for rule, details in discount_rules.items():
+        if details["condition"](cart_total, quantities):
+            discount_amount = (details["discount"] / 100) * cart_total
+            applicable_discounts[rule] = discount_amount
+
+    return applicable_discounts
+
+# Function to calculate the total cost
+def calculate_total_cost(products, quantities, gift_wrapping):
+    cart_total = 0
+    shipping_fee = 0
+
+    # Calculate subtotal and check if any product quantity exceeds 10
+    for product, quantity in zip(products, quantities):
+        price = catalog[product]
+        cart_total += price * quantity
+
+        if quantity > units_per_package:
+            shipping_fee += shipping_fee_per_package
+
+    # Calculate discount
+    applicable_discounts = calculate_discount(cart_total, quantities)
+    discount_name = ""
+    discount_amount = 0
+
+    if applicable_discounts:
+        discount_name = max(applicable_discounts, key=applicable_discounts.get)
+        discount_amount = applicable_discounts[discount_name]
+
+    # Calculate gift wrap fee
+    gift_wrap_fee_total = gift_wrap_fee * sum(quantities) if gift_wrapping else 0
+
+    # Calculate total cost
+    total_cost = cart_total - discount_amount + shipping_fee + gift_wrap_fee_total
+
+    # Output details
+    print("Product Details:")
+    for product, quantity in zip(products, quantities):
+        total_price = catalog[product] * quantity
+        print(f"{product}: Quantity: {quantity}, Total Price: ${total_price}")
+
+    print(f"\nSubtotal: ${cart_total}")
+
+    if discount_name:
+        print(f"Discount Applied: {discount_name}, Amount: ${discount_amount}")
+
+    print(f"Shipping Fee: ${shipping_fee}")
+    print(f"Gift Wrap Fee: ${gift_wrap_fee_total}")
+    print(f"Total: ${total_cost}")
+
+# Get quantity and gift wrap info for each product
+products = ["Product A", "Product B", "Product C"]
+quantities = []
+gift_wrapping = []
+
+for product in products:
+    quantity = int(input(f"Enter quantity for {product}: "))
+    quantities.append(quantity)
+
+    wrap = input(f"Is {product} wrapped as a gift? (yes/no): ")
+    gift_wrapping.append(wrap.lower() == "yes")
+
+# Calculate and display the details
+calculate_total_cost(products, quantities, gift_wrapping)
